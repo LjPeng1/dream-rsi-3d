@@ -3,6 +3,9 @@
 This fork adapts [Google Research DREAM-RSI](https://github.com/google-research/dream-rsi)
 at `8ec35bd2538220517ce1bfca4282db21b8c518db` (Apache-2.0).
 It is a small research baseline, not a reproduction of the paper's headline results.
+The [recorded pilot](../examples/blender_layout_pilot/README.md) includes generated
+programs, a GLB, renders, scores and resource accounting. Shared E0 already reached
+full marks; adaptive and fixed E1 tied, so it demonstrates integration, not RSI gains.
 
 The fixed coding LLM writes a reusable `solve(scene)` program. A fixed evaluator
 scores its 3D placements. DREAM-RSI then rewrites the **exploration policy** using

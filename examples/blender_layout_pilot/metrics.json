@@ -1,0 +1,364 @@
+{
+  "date": "2026-10-22",
+  "upstream_commit": "8ec35bd2538220517ce1bfca4282db21b8c518db",
+  "backend": "codex_json",
+  "codex_cli_version": "0.163.0-alpha.11",
+  "model_note": "Used the existing local Codex default configuration; no model override. This is not a server identity attestation.",
+  "task_hashes": {
+    "evaluator.py": "1cbd4efe92f82b63244d535e14c3ca3c734469154edf5308c27683d1336198db",
+    "export.py": "4a80b1424887c82b36272ac475787df68546278d3c98bbc4f913c866773e91ae",
+    "init_program.py": "d77e079ab1472ff29930c8510a65468814f3dc69a4a32d1bdb70ba2b8c9c02d7",
+    "problem.txt": "ec9d114218a7ce26e5be35576267023f3246ebe37eebcd7e5c8c835c1c864b1d",
+    "scenes.py": "0f9c9c3080c63d5709857ecc970baab29e3f8dc2fa9a0ae6709b385c8b824ea0",
+    "worker.py": "f35592d4fb49edb3d080fa65b0adb1626bc001b75b5adca7048f1a894c8d0659"
+  },
+  "results": {
+    "initial": {
+      "program": "initial_program.py",
+      "sha256": "d77e079ab1472ff29930c8510a65468814f3dc69a4a32d1bdb70ba2b8c9c02d7",
+      "dev": {
+        "combined_score": 0.6738452380952381,
+        "strict_success_rate": 0.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 0.9583333333333334,
+          "relations": 0.21666666666666667
+        },
+        "scene_sha256": "5f8098ef5921f2589f5f06d1640231b5b0db46017a24c6f59058fd355c05b6c2",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 6
+      },
+      "heldout": {
+        "combined_score": 0.6830505952380953,
+        "strict_success_rate": 0.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 0.9473214285714285,
+          "relations": 0.24791666666666667
+        },
+        "scene_sha256": "d5ce70e9d7ae981b4d9a5eae4db5d7e4532cf374ac5a2bac8cafa09f0c96a604",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 8
+      }
+    },
+    "e0": {
+      "program": "e0_program.py",
+      "sha256": "ffe32293b8c1fdc345e49eaaf9691d33732614dcf853e3563fc9c2f519b25886",
+      "dev": {
+        "combined_score": 1.0,
+        "strict_success_rate": 1.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 1.0,
+          "relations": 1.0
+        },
+        "scene_sha256": "5f8098ef5921f2589f5f06d1640231b5b0db46017a24c6f59058fd355c05b6c2",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 6
+      },
+      "heldout": {
+        "combined_score": 1.0,
+        "strict_success_rate": 1.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 1.0,
+          "relations": 1.0
+        },
+        "scene_sha256": "d5ce70e9d7ae981b4d9a5eae4db5d7e4532cf374ac5a2bac8cafa09f0c96a604",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 8
+      }
+    },
+    "adaptive_e1": {
+      "program": "adaptive_e1_program.py",
+      "sha256": "25c71bc327863719243a554a8a9005c99f0b80e82bad694f3b6f18221a906def",
+      "dev": {
+        "combined_score": 1.0,
+        "strict_success_rate": 1.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 1.0,
+          "relations": 1.0
+        },
+        "scene_sha256": "5f8098ef5921f2589f5f06d1640231b5b0db46017a24c6f59058fd355c05b6c2",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 6
+      },
+      "heldout": {
+        "combined_score": 1.0,
+        "strict_success_rate": 1.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 1.0,
+          "relations": 1.0
+        },
+        "scene_sha256": "d5ce70e9d7ae981b4d9a5eae4db5d7e4532cf374ac5a2bac8cafa09f0c96a604",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 8
+      }
+    },
+    "fixed_e1": {
+      "program": "fixed_e1_program.py",
+      "sha256": "d7f1035ebff6c0c4d15daa835b09f35027ffdbe3a5bd8b86b525d491c590ba1f",
+      "dev": {
+        "combined_score": 1.0,
+        "strict_success_rate": 1.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 1.0,
+          "relations": 1.0
+        },
+        "scene_sha256": "5f8098ef5921f2589f5f06d1640231b5b0db46017a24c6f59058fd355c05b6c2",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 6
+      },
+      "heldout": {
+        "combined_score": 1.0,
+        "strict_success_rate": 1.0,
+        "valid_scene_rate": 1.0,
+        "components": {
+          "support": 1.0,
+          "collision_free": 1.0,
+          "relations": 1.0
+        },
+        "scene_sha256": "d5ce70e9d7ae981b4d9a5eae4db5d7e4532cf374ac5a2bac8cafa09f0c96a604",
+        "benchmark_version": "blender-layout-v1",
+        "scene_count": 8
+      }
+    }
+  },
+  "policy": {
+    "incumbent_kept": false,
+    "selected_sha256": "2209d16848497a9cedc502f9688fe340c7678c4b7341bff87eda55ac1a8a0e23",
+    "used_sha256": "2209d16848497a9cedc502f9688fe340c7678c4b7341bff87eda55ac1a8a0e23",
+    "selected_to_used_verified": true,
+    "replay_comparison": [
+      {
+        "round": "r0000_20261022_183219_dfc60489",
+        "pareto": {
+          "auc": 0.0,
+          "parallel_penalty": 1.0,
+          "parallelism_weight": 0.05,
+          "reward": -0.05,
+          "method": "mean per-trace normalized budget<->attainment hypervolume minus worker-capped sequential-round penalty",
+          "n_traces_scored": 1,
+          "per_trace": [
+            {
+              "name": "_current",
+              "run_best": 1.0,
+              "n_evaluated": 4,
+              "auc": 0.0,
+              "parallel_penalty": 1.0,
+              "front": [
+                {
+                  "beta": 0.0,
+                  "total_budget": 4.0,
+                  "attain": 1.0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "round": "r0001_20261022_183219_dfc60489",
+        "pareto": {
+          "auc": 0.0,
+          "parallel_penalty": 1.0,
+          "parallelism_weight": 0.05,
+          "reward": -0.05,
+          "method": "mean per-trace normalized budget<->attainment hypervolume minus worker-capped sequential-round penalty",
+          "n_traces_scored": 1,
+          "per_trace": [
+            {
+              "name": "_current",
+              "run_best": 1.0,
+              "n_evaluated": 4,
+              "auc": 0.0,
+              "parallel_penalty": 1.0,
+              "front": [
+                {
+                  "beta": 0.0,
+                  "total_budget": 4.0,
+                  "attain": 1.0
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "shared_e0": {
+      "episodes": 4,
+      "usage_available": 4,
+      "reported_token_totals": {
+        "input_tokens": 112538,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 14702,
+        "reasoning_output_tokens": 2105
+      },
+      "duration_sec": 540.6195222999995
+    },
+    "adaptive_learning": {
+      "episodes": 1,
+      "usage_available": 1,
+      "reported_token_totals": {
+        "input_tokens": 34330,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4668,
+        "reasoning_output_tokens": 274
+      },
+      "duration_sec": 146.33599030000005
+    },
+    "adaptive_e1": {
+      "episodes": 4,
+      "usage_available": 4,
+      "reported_token_totals": {
+        "input_tokens": 267922,
+        "cached_input_tokens": 13312,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15283,
+        "reasoning_output_tokens": 1531
+      },
+      "duration_sec": 488.53283060000103
+    },
+    "fixed_e1": {
+      "episodes": 4,
+      "usage_available": 4,
+      "reported_token_totals": {
+        "input_tokens": 267977,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 14857,
+        "reasoning_output_tokens": 1282
+      },
+      "duration_sec": 467.26464619999933
+    }
+  },
+  "additional_diagnostic_usage": {
+    "ordinary_codex_workspace_access_failures": {
+      "episodes": 4,
+      "usage_available": 4,
+      "reported_token_totals": {
+        "input_tokens": 541695,
+        "cached_input_tokens": 466816,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2167,
+        "reasoning_output_tokens": 68
+      },
+      "duration_sec": 218.89746730000115
+    },
+    "discarded_policy_rewrite_on_stale_trace": {
+      "episodes": 1,
+      "usage_available": 1,
+      "reported_token_totals": {
+        "input_tokens": 34311,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4843,
+        "reasoning_output_tokens": 501
+      },
+      "duration_sec": 149.10762389999945
+    }
+  },
+  "cumulative_best_selected_by_dev": {
+    "adaptive": "e0",
+    "fixed": "e0"
+  },
+  "blender_verification": {
+    "passed": true,
+    "blender_version": "4.5.11 LTS",
+    "scene_id": "dev_00",
+    "expected_objects": 8,
+    "imported_objects": 8,
+    "checks": [
+      {
+        "id": "item_2",
+        "passed": true,
+        "size_error": 6.866455076748323e-08,
+        "center_error": 8.010864283036767e-08,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "base_4",
+        "passed": true,
+        "size_error": 1.6021728521664613e-07,
+        "center_error": 6.29425049858412e-08,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "item_1",
+        "passed": true,
+        "size_error": 2.2125244142356948e-07,
+        "center_error": 1.7166137755708633e-07,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "item_0",
+        "passed": true,
+        "size_error": 1.9073486329235223e-07,
+        "center_error": 8.773803683581605e-08,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "base_0",
+        "passed": true,
+        "size_error": 6.866455082299439e-08,
+        "center_error": 6.29425049858412e-08,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "base_3",
+        "passed": true,
+        "size_error": 8.392333983309186e-08,
+        "center_error": 1.4877319376438436e-07,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "base_2",
+        "passed": true,
+        "size_error": 4.043579101553618e-07,
+        "center_error": 6.29425049858412e-08,
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "id": "base_1",
+        "passed": true,
+        "size_error": 3.509521484534872e-07,
+        "center_error": 1.7166137755708633e-07,
+        "vertices": 24,
+        "polygons": 12
+      }
+    ],
+    "verification": "GLB re-imported; world bounding boxes checked against immutable input"
+  },
+  "limitations": [
+    "Single shared starting trace and one policy rewrite: feasibility pilot, not evidence of RSI gains.",
+    "Equal online episode caps do not equal token/compute budgets; policy rewrite adds cost.",
+    "Heldout solver performance is not evidence of policy transfer to new task families.",
+    "Cuboid constraints and mesh roundtrip do not measure arbitrary asset quality.",
+    "All four original model outputs retained and independently rescored after correcting a startup warning parser. E0 refinement prompts had host-failure feedback; L0 in this directory starts afresh using only the corrected positive trace. Engineering pilot, not a clean efficacy experiment.",
+    "The prior L0 used a stale trace and was discarded. The reported fresh L0 used corrected positive trace scores.",
+    "The new policy tied the incumbent and was selected by the upstream tie-breaking rule, not a strict improvement.",
+    "E1 arms were launched independently in parallel, one worker each; elapsed times are not a controlled performance benchmark.",
+    "One E0 candidate uses a wall-clock search limit and is not strictly deterministic; it was not the selected champion. Source inspection found fixed iteration budgets in all eight E1 candidates and no external I/O in the sampled solvers. This is not a formal sandbox guarantee."
+  ]
+}

@@ -2,7 +2,9 @@
 
 **3D research fork:** this fork adds a runnable procedural 3D layout task,
 a shared-start fixed-policy comparison, Blender GLB export/verification, and
-current Codex/Windows support. See [3D baseline guide](docs/3D_BASELINE.md).
+current Codex/Windows support. See the [3D baseline guide](docs/3D_BASELINE.md)
+and [recorded integration pilot](examples/blender_layout_pilot/README.md).
+The pilot completed the policy rewrite and comparison but found no RSI advantage.
 The original framework and paper description follow below.
 
 This is the code for **DREAM-RSI: Recursive Self-Improvement Through Evolving

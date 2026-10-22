@@ -1,0 +1,4 @@
+# Preserve the exact archived source bytes referenced by metrics.json hashes.
+*.py -text
+# The archived policy was emitted with CRLF; accept CR as its line terminator.
+learned_policy.py whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
