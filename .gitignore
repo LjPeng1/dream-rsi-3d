@@ -4,6 +4,8 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
+.venv/
+tasks/blender_layout/.runtime/
 
 # Local settings and API keys
 .env

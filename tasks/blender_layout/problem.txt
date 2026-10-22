@@ -1,0 +1,30 @@
+Improve a reusable 3D layout solver, not a single saved layout.
+
+Implement solve(scene) -> dict mapping every object id to exactly three finite
+numbers [center_x, center_y, center_z], in metres. Change code only inside the
+EVOLVE block. Python standard library only. The input is a JSON-compatible dict:
+  room: [width, depth, height], spanning x=[0,width], y=[0,depth], z=[0,height]
+  objects: [{id, size:[width,depth,height], support:null|another_object_id}]
+  relations: [{type:'left_of'|'near', a:object_id, b:object_id, ...}]
+Object dimensions, identity, orientation and support assignments are immutable.
+Objects with support=null must rest on z=0. Other objects must lie fully within
+their parent's XY footprint and rest on its top face. No object may penetrate
+another. Touching faces are allowed. left_of requires a's right face plus gap to
+be at or left of b's left face. near uses XY centre distance <= max_distance.
+
+Return only {id:[x,y,z],...}; do not return size, rotation, room, metrics or code.
+All objects are required exactly once. Missing/extra ids, invalid JSON, non-finite
+coordinates, booleans, schema changes, or any out-of-room object invalidate that
+scene (score zero). Geometry and scores are independently computed by the host.
+All six development scenes run in one subprocess with a default 8 second total
+timeout. A failed process scores zero. Do not access files, subprocesses, network,
+the evaluator, or evaluation state. A subprocess is not a security sandbox.
+
+The valid-scene score is feasibility * (0.6 + 0.4 * relation_fraction), where
+feasibility = 0.55 * supported_object_fraction + 0.45 * noncolliding_pair_fraction.
+Each geometric component and the strict all-constraints success rate are also
+reported. Maximize mean development combined_score. Optimize general rules that
+work for unseen room/object dimensions and relation configurations. Held-out
+instances are evaluated independently after search, never as search feedback.
+The axis-aligned cuboid task is a controlled geometric baseline, not a benchmark
+of arbitrary asset quality, photorealism, topology, or deformable physics.

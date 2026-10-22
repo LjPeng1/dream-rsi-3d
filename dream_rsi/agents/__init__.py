@@ -17,9 +17,10 @@
 from dream_rsi.agents.base import Agent, AgentResult
 from dream_rsi.agents.gemini import GeminiAgent
 from dream_rsi.agents.codex import CodexAgent
+from dream_rsi.agents.codex_json import CodexJsonAgent
 from dream_rsi.agents.claude import ClaudeAgent
 
-AGENTS = ("gemini", "codex", "claude")
+AGENTS = ("gemini", "codex", "codex_json", "claude")
 
 
 def load_agent(name: str, *, explore_shell: bool | None = None) -> Agent:
@@ -40,6 +41,10 @@ def load_agent(name: str, *, explore_shell: bool | None = None) -> Agent:
         from dream_rsi.agents.codex import from_env
 
         return from_env()
+    if key == "codex_json":
+        from dream_rsi.agents.codex_json import from_env
+
+        return from_env()
     if key == "claude":
         from dream_rsi.agents.claude import from_env
 
@@ -52,6 +57,7 @@ __all__ = [
     "AgentResult",
     "GeminiAgent",
     "CodexAgent",
+    "CodexJsonAgent",
     "ClaudeAgent",
     "load_agent",
     "AGENTS",

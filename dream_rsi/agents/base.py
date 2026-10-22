@@ -35,7 +35,77 @@ _ACTIVE: set[subprocess.Popen] = set()
 _ACTIVE_LOCK = threading.Lock()
 
 
+class _WindowsJob:
+    """Keep Windows descendants in an owned, kill-on-close job object."""
+
+    def __init__(self, proc: subprocess.Popen) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        class BasicLimits(ctypes.Structure):
+            _fields_ = [
+                ("PerProcessUserTimeLimit", ctypes.c_longlong),
+                ("PerJobUserTimeLimit", ctypes.c_longlong),
+                ("LimitFlags", wintypes.DWORD),
+                ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t),
+                ("ActiveProcessLimit", wintypes.DWORD),
+                ("Affinity", ctypes.c_size_t),
+                ("PriorityClass", wintypes.DWORD),
+                ("SchedulingClass", wintypes.DWORD),
+            ]
+
+        class IoCounters(ctypes.Structure):
+            _fields_ = [(name, ctypes.c_ulonglong) for name in (
+                "ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
+                "ReadTransferCount", "WriteTransferCount", "OtherTransferCount",
+            )]
+
+        class ExtendedLimits(ctypes.Structure):
+            _fields_ = [
+                ("BasicLimitInformation", BasicLimits), ("IoInfo", IoCounters),
+                ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t),
+            ]
+
+        self.api = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.api.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+        self.api.CreateJobObjectW.restype = wintypes.HANDLE
+        self.api.SetInformationJobObject.argtypes = [
+            wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+        ]
+        self.api.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        self.api.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        self.api.CloseHandle.argtypes = [wintypes.HANDLE]
+        self.handle = self.api.CreateJobObjectW(None, None)
+        if not self.handle:
+            raise ctypes.WinError(ctypes.get_last_error())
+        limits = ExtendedLimits()
+        limits.BasicLimitInformation.LimitFlags = 0x00002000  # KILL_ON_JOB_CLOSE
+        try:
+            if not self.api.SetInformationJobObject(self.handle, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            if not self.api.AssignProcessToJobObject(self.handle, int(proc._handle)):
+                raise ctypes.WinError(ctypes.get_last_error())
+        except BaseException:
+            self.close()
+            proc.kill()
+            raise
+
+    def terminate(self) -> None:
+        if self.handle and not self.api.TerminateJobObject(self.handle, 1):
+            import ctypes
+            raise ctypes.WinError(ctypes.get_last_error())
+
+    def close(self) -> None:
+        if self.handle:
+            self.api.CloseHandle(self.handle)
+            self.handle = None
+
+
 def register_proc(proc: subprocess.Popen) -> None:
+    if os.name == "nt":
+        proc._drsi_job = _WindowsJob(proc)
     with _ACTIVE_LOCK:
         _ACTIVE.add(proc)
 
@@ -43,14 +113,39 @@ def register_proc(proc: subprocess.Popen) -> None:
 def unregister_proc(proc: subprocess.Popen) -> None:
     with _ACTIVE_LOCK:
         _ACTIVE.discard(proc)
+    job = getattr(proc, "_drsi_job", None)
+    if job is not None:
+        job.close()
 
 
 def kill_proc_group(proc: subprocess.Popen) -> None:
-    """SIGKILL the process group of a child started with start_new_session=True."""
-    if proc.poll() is not None:
-        return
+    """Stop an owned subprocess tree; its caller must still reap the process."""
+    if os.name == "nt":
+        job = getattr(proc, "_drsi_job", None)
+        if job is not None:
+            job.terminate()
+            return
+        if proc.poll() is not None:
+            return
+        # Windows has neither killpg nor getpgid. /T includes descendants such
+        # as a renderer started by an evaluator; no shell or image-name match.
+        try:
+            result = subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                capture_output=True,
+                timeout=10,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            if result.returncode == 0 or proc.poll() is not None:
+                return
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        proc.kill()
+        raise RuntimeError(f"Could not terminate the full subprocess tree for PID {proc.pid}")
     try:
-        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        # start_new_session=True makes the PID the group ID. The parent may
+        # already have exited while a descendant still holds an output pipe.
+        os.killpg(proc.pid, signal.SIGKILL)
     except (ProcessLookupError, PermissionError, OSError):
         try:
             proc.kill()

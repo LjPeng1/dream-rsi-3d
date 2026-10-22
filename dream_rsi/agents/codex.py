@@ -16,16 +16,24 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import shlex
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
-from dream_rsi.agents.base import AgentResult, save_prompt, save_run_logs
+from dream_rsi.agents.base import (
+    SHUTDOWN,
+    AgentResult,
+    kill_proc_group,
+    register_proc,
+    save_prompt,
+    save_run_logs,
+    unregister_proc,
+)
 
 _verified_codex: set[str] = set()
 
@@ -37,12 +45,16 @@ def _assert_openai_codex(codex_path: str) -> None:
         [codex_path, "exec", "--help"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=15,
         env=os.environ.copy(),
     )
     blob = ((cp.stdout or "") + (cp.stderr or "")).lower()
     if any(m in blob for m in ("granian", "django", ":9810", "listening at: http")):
         raise RuntimeError(f"Wrong `codex` binary at {codex_path} (not OpenAI Codex CLI)")
+    if cp.returncode != 0 or "--sandbox" not in blob or "--output-last-message" not in blob:
+        raise RuntimeError(f"Cannot verify a compatible OpenAI Codex CLI at {codex_path}")
     _verified_codex.add(codex_path)
 
 
@@ -56,6 +68,46 @@ def _resolve_codex_bin(codex_bin: str) -> str:
         path = str(Path(codex_bin).resolve())
     _assert_openai_codex(path)
     return path
+
+
+def _usage_from_jsonl(stdout: str) -> dict[str, Any]:
+    """Preserve reported per-turn token counts; absent usage is not zero cost."""
+    turns = []
+    totals: dict[str, int | float] = {}
+    for line in stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict) or event.get("type") != "turn.completed":
+            continue
+        usage = event.get("usage")
+        if not isinstance(usage, dict):
+            continue
+        turns.append(usage)
+        for key, value in usage.items():
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                totals[key] = totals.get(key, 0) + value
+    return {"available": bool(turns), "turns": turns, "total": totals if turns else None}
+
+
+def _validate_extra_args(args: list[str]) -> None:
+    """Extra exec options must not replace the backend's permission boundary."""
+    forbidden = {"--yolo", "--full-auto", "--ignore-rules", "--sandbox", "-s"}
+    permission_keys = {"sandbox_mode", "sandbox_permissions", "permissions", "approval_policy"}
+    for index, arg in enumerate(args):
+        option = arg.split("=", 1)[0]
+        if option in forbidden or option.startswith("--dangerously-"):
+            raise ValueError(f"CODEX_EXTRA_ARGS cannot override permissions: {option}")
+        config = None
+        if arg in ("-c", "--config") and index + 1 < len(args):
+            config = args[index + 1]
+        elif arg.startswith("--config="):
+            config = arg.split("=", 1)[1]
+        elif arg.startswith("-c") and arg != "-c":
+            config = arg[2:]
+        if config and config.split("=", 1)[0].split(".", 1)[0].strip() in permission_keys:
+            raise ValueError("CODEX_EXTRA_ARGS cannot override permission configuration")
 
 
 class CodexAgent:
@@ -83,13 +135,18 @@ class CodexAgent:
         self.plain_exec = plain_exec
 
     def _build_command(self, workspace: Path, prompt: str, last_message: Path) -> list[str]:
+        del prompt  # Always sent on stdin, including on Windows (command length).
+        _validate_extra_args(self.extra_args)
         codex_path = _resolve_codex_bin(self.codex_bin)
-        cmd: list[str] = [codex_path, *self.extra_args, "exec", "--skip-git-repo-check", "-C", str(workspace)]
+        cmd: list[str] = [
+            codex_path, "exec", *self.extra_args,
+            "--sandbox", "workspace-write", "--skip-git-repo-check", "-C", str(workspace),
+        ]
         if not self.plain_exec:
-            cmd.extend(["--json", "--full-auto"])
+            cmd.append("--json")
         if self.model:
             cmd.extend(["-m", self.model])
-        cmd.extend(["-o", str(last_message), prompt])
+        cmd.extend(["-o", str(last_message), "-"])
         return cmd
 
     def run(
@@ -103,42 +160,77 @@ class CodexAgent:
         run_cwd: Path | None = None,
         stage: str | None = None,
     ) -> AgentResult:
-        del stage  # Gemini alone currently has stage-specific tool allowlists.
+        del stage, node_dir, guide
         save_prompt(log_dir, prompt)
-        last_message = log_dir / "codex_last_message.txt"
-        cwd = run_cwd or workspace
-
+        last_message = (log_dir / "codex_last_message.txt").resolve()
+        cwd = (run_cwd or workspace).resolve()
+        cmd: list[str] | None = None
+        proc: subprocess.Popen | None = None
+        stdout = stderr = b""
+        started = time.monotonic()
+        timed_out = False
+        error = ""
+        result = AgentResult(message="codex finished")
         try:
+            if SHUTDOWN.is_set():
+                raise RuntimeError("codex cancelled: shutdown requested")
             cmd = self._build_command(cwd, prompt, last_message)
-        except (FileNotFoundError, RuntimeError) as exc:
-            return AgentResult(status="failed", message=str(exc))
-
-        async def _run() -> subprocess.CompletedProcess:
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 cwd=str(cwd),
                 env=os.environ.copy(),
+                start_new_session=True,
             )
-            stdout, _ = await proc.communicate()
-            return subprocess.CompletedProcess(cmd, proc.returncode or 0, stdout.decode("utf-8", errors="replace"))
-
-        try:
-            if self.timeout_sec:
-                cp = asyncio.run(asyncio.wait_for(_run(), timeout=self.timeout_sec))
-            else:
-                cp = asyncio.run(_run())
-        except asyncio.TimeoutError:
-            return AgentResult(status="failed", message=f"codex timeout after {self.timeout_sec}s")
+            register_proc(proc)
+            stdout, stderr = proc.communicate(
+                input=prompt.encode("utf-8"), timeout=self.timeout_sec or None,
+            )
+        except subprocess.TimeoutExpired as exc:
+            timed_out = True
+            stdout, stderr = exc.output or b"", exc.stderr or b""
+            error = f"codex timeout after {self.timeout_sec}s"
+            result = AgentResult(status="failed", message=error)
         except Exception as exc:
-            return AgentResult(status="failed", message=str(exc))
-
-        save_run_logs(log_dir, stdout=cp.stdout or "", command=cmd)
-        if cp.returncode != 0:
-            return AgentResult(status="failed", message=f"codex exit {cp.returncode}")
-
-        return AgentResult(message="codex finished")
+            error = str(exc)
+            result = AgentResult(status="failed", message=error)
+        finally:
+            if proc is not None:
+                try:
+                    if timed_out or proc.poll() is None:
+                        try:
+                            kill_proc_group(proc)
+                        finally:
+                            # Closing the Windows job is a second tree-cleanup
+                            # guarantee, including if termination itself fails.
+                            unregister_proc(proc)
+                        stdout, stderr = proc.communicate(timeout=10)
+                except Exception as exc:
+                    error = f"{error}; cleanup failed: {exc}".lstrip("; ")
+                    result = AgentResult(status="failed", message=error)
+                    proc.kill()
+                    proc.wait(timeout=10)
+                finally:
+                    unregister_proc(proc)
+            out = stdout.decode("utf-8", errors="replace")
+            err = stderr.decode("utf-8", errors="replace")
+            save_run_logs(log_dir, stdout=out, stderr=err, command=cmd)
+            (log_dir / "usage.json").write_text(
+                json.dumps(_usage_from_jsonl(out), indent=2), encoding="utf-8",
+            )
+            (log_dir / "run.json").write_text(json.dumps({
+                "returncode": proc.returncode if proc else None,
+                "duration_sec": time.monotonic() - started,
+                "timed_out": timed_out,
+                "error": error or None,
+            }, indent=2), encoding="utf-8")
+        if result.status == "failed":
+            return result
+        if proc is not None and proc.returncode != 0:
+            return AgentResult(status="failed", message=f"codex exit {proc.returncode}")
+        return result
 
 
 def from_env() -> CodexAgent:

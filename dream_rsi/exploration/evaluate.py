@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import json
 import os
-import signal
 import subprocess
 import sys
 import textwrap
@@ -135,6 +134,8 @@ def run_evaluator(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             env=env,
             cwd=str(evaluator_path.parent),
             start_new_session=True,
@@ -143,18 +144,26 @@ def run_evaluator(
         return {"error": f"failed to spawn evaluator: {exc}", "score": 0.0}
 
     # Register so a Ctrl-C in the CLI also kills in-flight evaluations.
-    from dream_rsi.agents.base import register_proc, unregister_proc
+    from dream_rsi.agents.base import kill_proc_group, register_proc, unregister_proc
 
-    register_proc(proc)
     try:
+        register_proc(proc)
         stdout, stderr = proc.communicate(timeout=timeout_sec)
     except subprocess.TimeoutExpired:
         try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        except (ProcessLookupError, OSError):
-            proc.kill()
-        proc.wait()
+            kill_proc_group(proc)
+        finally:
+            # Drain/close both pipes and reap the child after tree termination.
+            unregister_proc(proc)
+            proc.communicate(timeout=10)
         return {"error": f"evaluator timeout after {timeout_sec}s", "score": 0.0}
+    except BaseException:
+        try:
+            kill_proc_group(proc)
+        finally:
+            unregister_proc(proc)
+            proc.communicate(timeout=10)
+        raise
     finally:
         unregister_proc(proc)
 

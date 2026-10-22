@@ -1,5 +1,10 @@
 # DREAM-RSI
 
+**3D research fork:** this fork adds a runnable procedural 3D layout task,
+a shared-start fixed-policy comparison, Blender GLB export/verification, and
+current Codex/Windows support. See [3D baseline guide](docs/3D_BASELINE.md).
+The original framework and paper description follow below.
+
 This is the code for **DREAM-RSI: Recursive Self-Improvement Through Evolving
 Worlds**.
 
